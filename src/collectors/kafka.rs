@@ -17,7 +17,7 @@ impl KafkaCollector {
 
 impl KafkaCollector {
     /// TODO
-    pub fn collect(span: FinishedSpan) -> Result<(), ()> {
+    pub fn collect(&self, span: FinishedSpan) -> Result<(), ()> {
         // TODO
         Ok(())
     }

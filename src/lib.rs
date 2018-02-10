@@ -11,4 +11,6 @@ mod collectors;
 
 
 pub use self::tracer::ZipkinTracer;
+pub use self::tracer::ZipkinContextOptions;
+
 pub use self::collectors::kafka::KafkaCollector;

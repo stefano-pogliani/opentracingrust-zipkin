@@ -17,18 +17,29 @@ use opentracingrust::TracerInterface;
 
 
 mod context;
+mod extract;
+mod inject;
 mod trace_id;
+
 pub use self::context::ZipkinContext;
+pub use self::context::ZipkinContextOptions;
 
 
-/// TODO
+/// A Zipkin backed OpenTracingRust tracer.
+///
+/// Use a collector to send the finished spans to Zipkin.
+///
+/// Sampling policy:
+///
+///   * Any span inherits the sampling state from its references.
+///   * Root spans are always sampled: currently sampling policies are not supported.
 pub struct ZipkinTracer {
     sender: SpanSender,
 }
 
 impl ZipkinTracer {
-    /// TODO
-    pub fn new(host: &str) -> (Tracer, SpanReceiver) {
+    /// Creates a new zipkin tracer.
+    pub fn new() -> (Tracer, SpanReceiver) {
         let (sender, receiver) = unbounded();
         let tracer = Tracer::new(ZipkinTracer {
             sender,
@@ -39,13 +50,19 @@ impl ZipkinTracer {
 
 impl TracerInterface for ZipkinTracer {
     fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
-        // TODO
-        Ok(None)
+        match fmt {
+            ExtractFormat::Binary(carrier) => extract::binary(carrier),
+            ExtractFormat::HttpHeaders(carrier) => extract::http_headers(carrier),
+            ExtractFormat::TextMap(carrier) => extract::http_headers(carrier),
+        }
     }
 
     fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()> {
-        // TODO
-        Ok(())
+        match fmt {
+            InjectFormat::Binary(carrier) => inject::binary(context, carrier),
+            InjectFormat::HttpHeaders(carrier) => inject::http_headers(context, carrier),
+            InjectFormat::TextMap(carrier) => inject::http_headers(context, carrier),
+        }
     }
 
     fn span(&self, name: &str, options: StartOptions) -> Span {
