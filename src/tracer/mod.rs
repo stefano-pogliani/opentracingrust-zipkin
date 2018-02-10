@@ -17,6 +17,7 @@ use opentracingrust::TracerInterface;
 
 
 mod context;
+mod trace_id;
 pub use self::context::ZipkinContext;
 
 

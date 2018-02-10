@@ -15,5 +15,8 @@ license = "MIT"
 maintenance = { status = "actively-developed" }
 
 [dependencies]
+byteorder = "^1.2.1"
 crossbeam-channel = "^0.1.2"
+data-encoding = "^2.1.1"
 opentracingrust = "^0.3.0"
+rand = "^0.4.0"
