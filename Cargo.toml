@@ -1,0 +1,19 @@
+[package]
+name = "opentracingrust_zipkin"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+
+description = "Zipkin tracer for OpenTracingRust"
+documentation = "https://docs.rs/opentracingrust_zipkin/"
+homepage = "https://github.com/stefano-pogliani/opentracingrust_zipkin"
+repository = "https://github.com/stefano-pogliani/opentracingrust_zipkin"
+readme = "Readme.md"
+keywords = ["opentracing", "tracing", "zipkin"]
+license = "MIT"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[dependencies]
+crossbeam-channel = "^0.1.2"
+opentracingrust = "^0.3.0"
