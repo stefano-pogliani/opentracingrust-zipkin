@@ -29,3 +29,22 @@ fn main() {
     });
 }
 ```
+
+
+Thrift
+------
+This crate uses thrift to send messages to Zipkin and for the bynary encoding.
+
+The thift-generated rust modules are checked into source control so that the
+crate can be compiled without having to install a rust-enabled thrift compiler.
+
+This crate comes with a Dockerfile that installs and configures thrift with rust support.
+The commands below can be used to re-generate the rust code from thrift definitions:
+
+```bash
+cd thrift/
+docker build --rm --tag thrift-compiler .
+docker run --rm -it -v $PWD:/thrift/models -v $PWD/../src:/thrift/src thrift-compiler bash
+thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/binary_format.thrift
+#thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/zipkinCore.thrift
+```

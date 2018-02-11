@@ -5,9 +5,15 @@ extern crate data_encoding;
 extern crate opentracingrust;
 extern crate rand;
 
+// Needed by thrift
+extern crate ordered_float;
+extern crate thrift;
+extern crate try_from;
 
-mod tracer;
+
 mod collectors;
+mod thrift_gen;
+mod tracer;
 
 
 pub use self::tracer::ZipkinTracer;
