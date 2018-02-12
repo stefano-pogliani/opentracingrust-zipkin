@@ -41,6 +41,28 @@ impl ZipkinContext {
     }
 }
 
+impl ZipkinContext {
+    /// Is the debug flag set?
+    pub fn debug(&self) -> bool {
+        self.debug
+    }
+
+    /// Is the context sampled?
+    pub fn sampled(&self) -> bool {
+        self.sampled
+    }
+
+    /// Access the context's span ID.
+    pub fn span_id(&self) -> u64 {
+        self.span_id
+    }
+
+    /// Access the context's trace ID.
+    pub fn trace_id(&self) -> &TraceID {
+        &self.trace_id
+    }
+}
+
 impl SpanReferenceAware for ZipkinContext {
     fn reference_span(&mut self, reference: &SpanReference) {
         match *reference {

@@ -17,6 +17,7 @@ use opentracingrust::TracerInterface;
 
 
 mod context;
+mod error;
 mod extract;
 mod inject;
 mod trace_id;
@@ -49,6 +50,7 @@ impl ZipkinTracer {
 }
 
 impl TracerInterface for ZipkinTracer {
+    /// TODO: document formats.
     fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
         match fmt {
             ExtractFormat::Binary(carrier) => extract::binary(carrier),
@@ -57,6 +59,7 @@ impl TracerInterface for ZipkinTracer {
         }
     }
 
+    /// TODO: document formats.
     fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()> {
         match fmt {
             InjectFormat::Binary(carrier) => inject::binary(context, carrier),
