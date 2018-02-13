@@ -17,6 +17,7 @@ use super::trace_id::TraceID;
 #[derive(Clone)]
 pub struct ZipkinContext {
     debug: bool,
+    parent_span_id: Option<u64>,
     sampled: bool,
     span_id: u64,
     trace_id: TraceID,
@@ -34,6 +35,7 @@ impl ZipkinContext {
         let trace_id = options.trace_id.unwrap_or_else(TraceID::new);
         ZipkinContext {
             debug: options.debug,
+            parent_span_id: None,
             sampled: options.sampled,
             span_id,
             trace_id,
@@ -45,6 +47,11 @@ impl ZipkinContext {
     /// Is the debug flag set?
     pub fn debug(&self) -> bool {
         self.debug
+    }
+
+    /// Access the context's parent span ID.
+    pub fn parent_span_id(&self) -> Option<u64> {
+        self.parent_span_id
     }
 
     /// Is the context sampled?
@@ -70,6 +77,7 @@ impl SpanReferenceAware for ZipkinContext {
             SpanReference::ChildOf(ref context) => {
                 let context = context.impl_context::<ZipkinContext>().unwrap();
                 self.debug = context.debug;
+                self.parent_span_id = Some(context.span_id);
                 self.sampled = context.sampled;
                 self.trace_id = context.trace_id.clone();
             }
@@ -105,6 +113,7 @@ impl ZipkinContextOptions {
         self
     }
 
+    /// Sets the desired trace id.
     pub fn trace_id(mut self, trace_id: TraceID) -> ZipkinContextOptions {
         self.trace_id = Some(trace_id);
         self

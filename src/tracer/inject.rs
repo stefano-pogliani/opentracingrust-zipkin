@@ -16,8 +16,6 @@ use super::super::thrift_gen::binary_format;
 
 /// Encode the SpanContext into a thrift structure.
 pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
-    let items: BTreeMap<String, String> = context.baggage_items()
-        .map(|(k, v)| (k.clone(), v.clone())).collect();
     let inner_context = context.impl_context::<ZipkinContext>().expect(
         "Invalid SpanContext, was it created by ZipkinTracer?"
     );
@@ -28,6 +26,8 @@ pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
         false => 0,
         true => 1,
     };
+    let items: BTreeMap<String, String> = context.baggage_items()
+        .map(|(k, v)| (k.clone(), v.clone())).collect();
     let thrift_context = binary_format::SpanContext::new(
         Some(high as i64),     // Trace ID
         Some(low as i64),      // Trace ID (High)
@@ -43,21 +43,45 @@ pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
 }
 
 
-/// Encode the SpanContext into HTTP Headers following the B3 format.
+/// Encode the SpanContext into HTTP Headers.
 ///
+/// The encoding is done following the B3 propagation format.
 /// See https://github.com/openzipkin/b3-propagation
+///
+/// Baggage items are added to the headers with `OT-Baggage-{Key}: {Value}`.
 pub fn http_headers(context: &SpanContext, carrier: Box<&mut MapCarrier>) -> Result<()> {
-    // TODO
+    let inner_context = context.impl_context::<ZipkinContext>().expect(
+        "Invalid SpanContext, was it created by ZipkinTracer?"
+    );
+    if let Some(parent_span_id) = inner_context.parent_span_id() {
+        let parent_span_id = format!("{:x}", parent_span_id);
+        carrier.set("X-B3-ParentSpanId", &parent_span_id);
+    }
+    let span_id = format!("{:x}", inner_context.span_id());
+    carrier.set("X-B3-SpanId", &span_id);
+
+    carrier.set("X-B3-TraceId", &inner_context.trace_id().to_string());
+    carrier.set("X-B3-Sampled", match inner_context.sampled() {
+        false => "0",
+        true  => "1",
+    });
+
+    for (key, value) in context.baggage_items() {
+        let key = format!("OT-Baggage-{}", key);
+        carrier.set(&key, value);
+    }
     Ok(())
 }
 
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::io::Cursor;
 
     use opentracingrust::ImplContextBox;
     use opentracingrust::SpanContext;
+    use opentracingrust::SpanReference;
 
     use thrift::protocol::TBinaryInputProtocol;
     use thrift::transport::TBufferedReadTransport;
@@ -67,8 +91,10 @@ mod tests {
     use super::super::context::ZipkinContext;
     use super::super::context::ZipkinContextOptions;
     use super::super::trace_id::TraceID;
+
     use super::binary;
     use super::binary_format;
+    use super::http_headers;
 
     fn make_context() -> SpanContext {
         let options = ZipkinContextOptions::default()
@@ -115,5 +141,23 @@ mod tests {
             (String::from("b"), String::from("2")),
             (String::from("c"), String::from("3")),
         ]);
+    }
+
+    #[test]
+    fn test_headers_encoding() {
+        // Encode the context in memory.
+        let mut headers: HashMap<String, String> = HashMap::new();
+        let mut context = make_context();
+        context.reference_span(&SpanReference::ChildOf(make_context()));
+        http_headers(&context, Box::new(&mut headers)).unwrap();
+
+        // Validate content.
+        assert_eq!(headers.get("X-B3-ParentSpanId").unwrap(), "2a");
+        assert_eq!(headers.get("X-B3-Sampled").unwrap(), "1");
+        assert_eq!(headers.get("X-B3-SpanId").unwrap(), "2a");
+        assert_eq!(headers.get("X-B3-TraceId").unwrap(), "0102030405060708090a0b0c0d0e0f10");
+        assert_eq!(headers.get("OT-Baggage-a").unwrap(), "1");
+        assert_eq!(headers.get("OT-Baggage-b").unwrap(), "2");
+        assert_eq!(headers.get("OT-Baggage-c").unwrap(), "3");
     }
 }
