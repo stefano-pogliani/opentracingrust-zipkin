@@ -21,6 +21,7 @@ pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
     );
     let (high, low) = inner_context.trace_id().split();
     let span_id = inner_context.span_id();
+    let parent_span_id = inner_context.parent_span_id().map(|id| id as i64);
     let sampled = inner_context.sampled();
     let flags = match inner_context.debug() {
         false => 0,
@@ -32,6 +33,7 @@ pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
         Some(high as i64),     // Trace ID
         Some(low as i64),      // Trace ID (High)
         Some(span_id as i64),  // Span ID
+        parent_span_id,        // Parent Span ID
         Some(sampled),         // Sampled?
         Some(flags),           // Flags
         Some(items)            // Baggage Items
@@ -114,10 +116,10 @@ mod tests {
     #[test]
     fn test_binary_encoding() {
         // Encode the context in memory.
-        let context = make_context();
         let mut buffer: Vec<u8> = Vec::new();
-        let result = binary(&context, Box::new(&mut buffer));
-        result.unwrap();
+        let mut context = make_context();
+        context.reference_span(&SpanReference::ChildOf(make_context()));
+        binary(&context, Box::new(&mut buffer)).unwrap();
         assert_ne!(buffer.len(), 0);
 
         // Decode the context from memory.
@@ -130,6 +132,7 @@ mod tests {
         assert_eq!(context.trace_id.unwrap(), 72623859790382856);
         assert_eq!(context.trace_id_high.unwrap(), 651345242494996240);
         assert_eq!(context.span_id.unwrap(), 42);
+        assert_eq!(context.parent_span_id.unwrap(), 42);
         assert_eq!(context.sampled.unwrap(), true);
         assert_eq!(context.flags.unwrap(), 1);
         let baggage_items = context.baggage_items.unwrap();

@@ -42,6 +42,8 @@ pub struct SpanContext {
   pub trace_id_high: Option<i64>,
   /// This field is unsigned but thrift does not support it
   pub span_id: Option<i64>,
+  /// This field is unsigned but thrift does not support it
+  pub parent_span_id: Option<i64>,
   pub sampled: Option<bool>,
   /// This field is unsigned but thrift does not support it
   pub flags: Option<i64>,
@@ -49,11 +51,12 @@ pub struct SpanContext {
 }
 
 impl SpanContext {
-  pub fn new<F1, F2, F3, F4, F5, F6>(trace_id: F1, trace_id_high: F2, span_id: F3, sampled: F4, flags: F5, baggage_items: F6) -> SpanContext where F1: Into<Option<i64>>, F2: Into<Option<i64>>, F3: Into<Option<i64>>, F4: Into<Option<bool>>, F5: Into<Option<i64>>, F6: Into<Option<BTreeMap<String, String>>> {
+  pub fn new<F1, F2, F3, F4, F5, F6, F7>(trace_id: F1, trace_id_high: F2, span_id: F3, parent_span_id: F4, sampled: F5, flags: F6, baggage_items: F7) -> SpanContext where F1: Into<Option<i64>>, F2: Into<Option<i64>>, F3: Into<Option<i64>>, F4: Into<Option<i64>>, F5: Into<Option<bool>>, F6: Into<Option<i64>>, F7: Into<Option<BTreeMap<String, String>>> {
     SpanContext {
       trace_id: trace_id.into(),
       trace_id_high: trace_id_high.into(),
       span_id: span_id.into(),
+      parent_span_id: parent_span_id.into(),
       sampled: sampled.into(),
       flags: flags.into(),
       baggage_items: baggage_items.into(),
@@ -64,9 +67,10 @@ impl SpanContext {
     let mut f_1: Option<i64> = Some(0);
     let mut f_2: Option<i64> = Some(0);
     let mut f_3: Option<i64> = Some(0);
-    let mut f_4: Option<bool> = Some(false);
-    let mut f_5: Option<i64> = Some(0);
-    let mut f_6: Option<BTreeMap<String, String>> = Some(BTreeMap::new());
+    let mut f_4: Option<i64> = Some(0);
+    let mut f_5: Option<bool> = Some(false);
+    let mut f_6: Option<i64> = Some(0);
+    let mut f_7: Option<BTreeMap<String, String>> = Some(BTreeMap::new());
     loop {
       let field_ident = i_prot.read_field_begin()?;
       if field_ident.field_type == TType::Stop {
@@ -87,14 +91,18 @@ impl SpanContext {
           f_3 = Some(val);
         },
         4 => {
-          let val = i_prot.read_bool()?;
+          let val = i_prot.read_i64()?;
           f_4 = Some(val);
         },
         5 => {
-          let val = i_prot.read_i64()?;
+          let val = i_prot.read_bool()?;
           f_5 = Some(val);
         },
         6 => {
+          let val = i_prot.read_i64()?;
+          f_6 = Some(val);
+        },
+        7 => {
           let map_ident = i_prot.read_map_begin()?;
           let mut val: BTreeMap<String, String> = BTreeMap::new();
           for _ in 0..map_ident.size {
@@ -103,7 +111,7 @@ impl SpanContext {
             val.insert(map_key_0, map_val_1);
           }
           i_prot.read_map_end()?;
-          f_6 = Some(val);
+          f_7 = Some(val);
         },
         _ => {
           i_prot.skip(field_ident.field_type)?;
@@ -116,9 +124,10 @@ impl SpanContext {
       trace_id: f_1,
       trace_id_high: f_2,
       span_id: f_3,
-      sampled: f_4,
-      flags: f_5,
-      baggage_items: f_6,
+      parent_span_id: f_4,
+      sampled: f_5,
+      flags: f_6,
+      baggage_items: f_7,
     };
     Ok(ret)
   }
@@ -149,8 +158,16 @@ impl SpanContext {
     } else {
       ()
     }
+    if let Some(fld_var) = self.parent_span_id {
+      o_prot.write_field_begin(&TFieldIdentifier::new("parent_span_id", TType::I64, 4))?;
+      o_prot.write_i64(fld_var)?;
+      o_prot.write_field_end()?;
+      ()
+    } else {
+      ()
+    }
     if let Some(fld_var) = self.sampled {
-      o_prot.write_field_begin(&TFieldIdentifier::new("sampled", TType::Bool, 4))?;
+      o_prot.write_field_begin(&TFieldIdentifier::new("sampled", TType::Bool, 5))?;
       o_prot.write_bool(fld_var)?;
       o_prot.write_field_end()?;
       ()
@@ -158,7 +175,7 @@ impl SpanContext {
       ()
     }
     if let Some(fld_var) = self.flags {
-      o_prot.write_field_begin(&TFieldIdentifier::new("flags", TType::I64, 5))?;
+      o_prot.write_field_begin(&TFieldIdentifier::new("flags", TType::I64, 6))?;
       o_prot.write_i64(fld_var)?;
       o_prot.write_field_end()?;
       ()
@@ -166,7 +183,7 @@ impl SpanContext {
       ()
     }
     if let Some(ref fld_var) = self.baggage_items {
-      o_prot.write_field_begin(&TFieldIdentifier::new("baggage_items", TType::Map, 6))?;
+      o_prot.write_field_begin(&TFieldIdentifier::new("baggage_items", TType::Map, 7))?;
       o_prot.write_map_begin(&TMapIdentifier::new(TType::String, TType::String, fld_var.len() as i32))?;
       for (k, v) in fld_var {
         o_prot.write_string(k)?;
@@ -189,6 +206,7 @@ impl Default for SpanContext {
       trace_id: Some(0),
       trace_id_high: Some(0),
       span_id: Some(0),
+      parent_span_id: Some(0),
       sampled: Some(false),
       flags: Some(0),
       baggage_items: Some(BTreeMap::new()),
