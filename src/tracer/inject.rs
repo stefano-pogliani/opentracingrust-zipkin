@@ -63,6 +63,10 @@ pub fn http_headers(context: &SpanContext, carrier: Box<&mut MapCarrier>) -> Res
     carrier.set("X-B3-SpanId", &span_id);
 
     carrier.set("X-B3-TraceId", &inner_context.trace_id().to_string());
+    carrier.set("X-B3-Flags", match inner_context.debug() {
+        false => "0",
+        true  => "1",
+    });
     carrier.set("X-B3-Sampled", match inner_context.sampled() {
         false => "0",
         true  => "1",
@@ -155,10 +159,11 @@ mod tests {
         http_headers(&context, Box::new(&mut headers)).unwrap();
 
         // Validate content.
-        assert_eq!(headers.get("X-B3-ParentSpanId").unwrap(), "2a");
-        assert_eq!(headers.get("X-B3-Sampled").unwrap(), "1");
-        assert_eq!(headers.get("X-B3-SpanId").unwrap(), "2a");
         assert_eq!(headers.get("X-B3-TraceId").unwrap(), "0102030405060708090a0b0c0d0e0f10");
+        assert_eq!(headers.get("X-B3-ParentSpanId").unwrap(), "2a");
+        assert_eq!(headers.get("X-B3-SpanId").unwrap(), "2a");
+        assert_eq!(headers.get("X-B3-Flags").unwrap(), "1");
+        assert_eq!(headers.get("X-B3-Sampled").unwrap(), "1");
         assert_eq!(headers.get("OT-Baggage-a").unwrap(), "1");
         assert_eq!(headers.get("OT-Baggage-b").unwrap(), "2");
         assert_eq!(headers.get("OT-Baggage-c").unwrap(), "3");

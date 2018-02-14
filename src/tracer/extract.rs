@@ -11,6 +11,8 @@ use thrift::transport::TBufferedReadTransport;
 
 use super::context::ZipkinContext;
 use super::context::ZipkinContextOptions;
+
+use super::error::data_encoding_error;
 use super::error::thrift_error;
 use super::trace_id::TraceID;
 
@@ -74,8 +76,50 @@ pub fn binary(carrier: Box<&mut Read>) -> Result<Option<SpanContext>> {
 ///
 /// Baggage items are expected to be in the format `OT-Baggage-{Key}: {Value}`.
 pub fn http_headers(carrier: Box<&MapCarrier>) -> Result<Option<SpanContext>> {
-    // TODO
-    Ok(None)
+    // Trace ID.
+    let trace_id = carrier.get("X-B3-TraceId").ok_or(
+        Error::Msg(String::from("Decoded context does not have a TraceID"))
+    )?;
+    let trace_id: TraceID = trace_id.parse().map_err(data_encoding_error)?;
+
+    // Span ID.
+    let span_id = carrier.get("X-B3-SpanId").ok_or(
+        Error::Msg(String::from("Decoded context does not have a SpanID"))
+    )?;
+    let span_id = u64::from_str_radix(&span_id, 16)?;
+
+    // Build the SpanContext.
+    let options = ZipkinContextOptions::default()
+        .debug(carrier.get("X-B3-Flags").unwrap_or(String::from("0")) == "1")
+        .span_id(span_id)
+        .trace_id(trace_id);
+
+    // Parent Span ID.
+    let options = match carrier.get("X-B3-ParentSpanId") {
+        None => options,
+        Some(parent_span_id) => {
+            let parent_span_id = u64::from_str_radix(&parent_span_id, 16)?;
+            options.parent_span_id(parent_span_id)
+        }
+    };
+    let options = match carrier.get("X-B3-Sampled") {
+        None => {
+            // TODO: once Samplers are implemented, call it here?
+            options.sampled(true)
+        },
+        Some(sampled) => options.sampled(sampled == "1"),
+    };
+
+    let context = ZipkinContext::new_with_options(options);
+    let context = ImplContextBox::new(context);
+    let mut context = SpanContext::new(context);
+
+    for (key, value) in carrier.items() {
+        if key.starts_with("OT-Baggage-") {
+            context.set_baggage_item(String::from(&key[11..]), value.clone());
+        }
+    }
+    Ok(Some(context))
 }
 
 
@@ -85,23 +129,16 @@ mod tests {
     use std::io::Cursor;
     use std::str::FromStr;
 
-    //use opentracingrust::ImplContextBox;
-    //use opentracingrust::SpanContext;
-    //use opentracingrust::SpanReference;
-
     use thrift::protocol::TBinaryOutputProtocol;
     use thrift::protocol::TOutputProtocol;
     use thrift::transport::TBufferedWriteTransport;
 
-    //use try_from::TryFrom;
-
     use super::super::context::ZipkinContext;
-    //use super::super::context::ZipkinContextOptions;
     use super::super::trace_id::TraceID;
 
     use super::binary;
     use super::binary_format;
-    //use super::http_headers;
+    use super::http_headers;
 
     #[test]
     fn test_binary_decoding() {
@@ -143,6 +180,44 @@ mod tests {
             inner.trace_id(),
             &TraceID::from_str("0102030405060708090a0b0c0d0e0f10").unwrap()
         );
+
+        let mut items: Vec<(String, String)> = context.baggage_items()
+            .map(|(k, v)| (k.clone(), v.clone())).collect();
+        items.sort();
+        assert_eq!(items, vec![
+            (String::from("a"), String::from("1")),
+            (String::from("b"), String::from("2")),
+            (String::from("c"), String::from("3"))
+        ]);
+    }
+
+    #[test]
+    fn test_http_headers_decoding() {
+        // Build a headers map.
+        let mut headers: BTreeMap<String, String> = BTreeMap::new();
+        headers.insert(
+            String::from("X-B3-TraceId"),
+            String::from("0102030405060708090a0b0c0d0e0f10")
+        );
+        headers.insert(String::from("X-B3-SpanId"), String::from("2a"));
+        headers.insert(String::from("X-B3-ParentSpanId"), String::from("2a"));
+        headers.insert(String::from("X-B3-Flags"), String::from("1"));
+        headers.insert(String::from("X-B3-Sampled"), String::from("1"));
+        headers.insert(String::from("OT-Baggage-a"), String::from("1"));
+        headers.insert(String::from("OT-Baggage-b"), String::from("2"));
+        headers.insert(String::from("OT-Baggage-c"), String::from("3"));
+
+        // Check content.
+        let context = http_headers(Box::new(&mut headers)).unwrap().unwrap();
+        let inner = context.impl_context::<ZipkinContext>().unwrap();
+        assert_eq!(
+            inner.trace_id(),
+            &TraceID::from_str("0102030405060708090a0b0c0d0e0f10").unwrap()
+        );
+        assert_eq!(inner.span_id(), 42);
+        assert_eq!(inner.parent_span_id().unwrap(), 42);
+        assert_eq!(inner.debug(), true);
+        assert_eq!(inner.sampled(), true);
 
         let mut items: Vec<(String, String)> = context.baggage_items()
             .map(|(k, v)| (k.clone(), v.clone())).collect();
