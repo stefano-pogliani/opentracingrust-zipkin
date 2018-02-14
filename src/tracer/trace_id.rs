@@ -2,8 +2,9 @@ use std::io::Cursor;
 use std::fmt;
 use std::str::FromStr;
 
-use byteorder::NativeEndian;
+use byteorder::NetworkEndian;
 use byteorder::ReadBytesExt;
+use byteorder::WriteBytesExt;
 
 use data_encoding::HEXLOWER_PERMISSIVE;
 use data_encoding::DecodeError;
@@ -12,27 +13,33 @@ use data_encoding::DecodeKind;
 use rand::random;
 
 
-/// Reverses the buffer and decodes it as u64.
-///
-/// The buffer is reveresed so that it can be "read as a number".
-/// In other words, reversing the buffer means that:
+/// Converts an 8-bytes buffer into an u64.
 ///
 /// ```ignore
 /// let buffer = [0, 0, 0, 0, 0, 0, 0, 1];
-/// assert_eq!(reverse_and_concat(&buffer), 1);
+/// assert_eq!(buffer_to_u64(&buffer), 1);
 /// ```
 ///
 /// # Panics
 ///
 /// If the give buffer is not 8 bytes.
-fn reverse_and_concat(input: &[u8]) -> u64 {
+fn buffer_to_u64(input: &[u8]) -> u64 {
     assert_eq!(8, input.len());
-    let buffer = vec![
-        input[7], input[6], input[5], input[4],
-        input[3], input[2], input[1], input[0]
-    ];
-    let mut buffer = Cursor::new(buffer);
-    buffer.read_u64::<NativeEndian>().unwrap()
+    let mut buffer = Cursor::new(input);
+    buffer.read_u64::<NetworkEndian>().unwrap()
+}
+
+
+/// Converts an u64 into an 8-bytes buffer.
+///
+/// ```ignore
+/// assert_eq!(u64_to_buffer(1), [0, 0, 0, 0, 0, 0, 0, 1]);
+/// ```
+fn u64_to_buffer(input: u64) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    buffer.write_u64::<NetworkEndian>(input).unwrap();
+    assert_eq!(buffer.len(), 8);
+    buffer
 }
 
 
@@ -54,6 +61,17 @@ enum InnerID {
 pub struct TraceID(InnerID);
 
 impl TraceID {
+    /// Create a TraceID for a (low, high) tuple.
+    pub fn join(high: u64, low: u64) -> TraceID {
+        let high = u64_to_buffer(high);
+        let low = u64_to_buffer(low);
+        let trace_id = [
+            high[0], high[1], high[2], high[3], high[4], high[5], high[6], high[7],
+            low[0], low[1], low[2], low[3], low[4], low[5], low[6], low[7]
+        ];
+        TraceID::from(trace_id)
+    }
+
     /// Generate a new, random, 16 bytes ID.
     pub fn new() -> TraceID {
         TraceID(InnerID::Long(random::<[u8; 16]>()))
@@ -65,12 +83,12 @@ impl TraceID {
     pub fn split(&self) -> (u64, u64) {
         match self.0 {
             InnerID::Long(ref id) => {
-                let high = reverse_and_concat(&id[0..8]);
-                let low = reverse_and_concat(&id[8..16]);
+                let high = buffer_to_u64(&id[0..8]);
+                let low = buffer_to_u64(&id[8..16]);
                 (high, low)
             },
             InnerID::Short(ref id) => {
-                let low = reverse_and_concat(&id[0..8]);
+                let low = buffer_to_u64(&id[0..8]);
                 (0, low)
             }
         }
@@ -250,6 +268,22 @@ mod tests {
             let (high, low): (u64, u64) = id.split();
             assert_eq!(high, 0);
             assert_eq!(low, 55);
+        }
+    }
+
+    mod join_for_u64s {
+        use super::super::TraceID;
+
+        #[test]
+        fn high_and_low() {
+            let id = TraceID::join(5, 2);
+            assert_eq!(id, TraceID::from([0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 2]));
+        }
+
+        #[test]
+        fn high_is_zero_when_low_is_enough() {
+            let id = TraceID::join(0, 2);
+            assert_eq!(id, TraceID::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]));
         }
     }
 }

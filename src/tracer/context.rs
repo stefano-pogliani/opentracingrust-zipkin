@@ -35,7 +35,7 @@ impl ZipkinContext {
         let trace_id = options.trace_id.unwrap_or_else(TraceID::new);
         ZipkinContext {
             debug: options.debug,
-            parent_span_id: None,
+            parent_span_id: options.parent_span_id,
             sampled: options.sampled,
             span_id,
             trace_id,
@@ -89,6 +89,7 @@ impl SpanReferenceAware for ZipkinContext {
 /// Additional options to seed a new span with.
 pub struct ZipkinContextOptions {
     debug: bool,
+    parent_span_id: Option<u64>,
     sampled: bool,
     span_id: Option<u64>,
     trace_id: Option<TraceID>,
@@ -98,6 +99,12 @@ impl ZipkinContextOptions {
     /// Sets the desired debug flag.
     pub fn debug(mut self, debug: bool) -> ZipkinContextOptions {
         self.debug = debug;
+        self
+    }
+
+    /// Sets the desired parent span ID.
+    pub fn parent_span_id(mut self, parent_span_id: u64) -> ZipkinContextOptions {
+        self.parent_span_id = Some(parent_span_id);
         self
     }
 
@@ -124,6 +131,7 @@ impl Default for ZipkinContextOptions {
     fn default() -> ZipkinContextOptions {
         ZipkinContextOptions {
             debug: false,
+            parent_span_id: None,
             sampled: true,
             span_id: None,
             trace_id: None,
