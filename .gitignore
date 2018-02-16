@@ -1,6 +1,7 @@
 *.swp
 **/*.rs.bk
 
+/docker-zipkin/
 /target/
 
 Cargo.lock

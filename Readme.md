@@ -48,3 +48,22 @@ docker run --rm -it -v $PWD:/thrift/models -v $PWD/../src:/thrift/src thrift-com
 thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/binary_format.thrift
 #thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/zipkinCore.thrift
 ```
+
+
+Docker Zipkin Playground
+------------------------
+To play around with the tracer and aid development you can run a
+zipkin-in-a-box with docker and docker-compose.
+
+The following steps are for use with the provided docker scripts:
+
+  1. `git clone https://github.com/openzipkin/docker-zipkin.git`
+  2. Update the `KAFKA_ADVERTISED_HOST_NAME`:
+    1. Set it to `kafka-zookeeper` to make all containers properly work with each other.
+    2. Edit `docker-zipkin/docker-compose-kafka10.yml` at line 15.
+    3. New line should be `KAFKA_ADVERTISED_HOST_NAME=kafka-zookeeper`.
+  3. If you want to access kafka from outside the docker-compose hosts (likely so):
+    1. Find the IP of the `kafka-zookeeper` container.
+    2. Edit `/etc/hosts`.
+    3. Add `<IP> kafka-zookeeper`.
+  4. Start all the zipkin processes: `docker-compose -f docker-compose.yml -f docker-compose-kafka10.yml -f docker-compose-ui.yml up`
