@@ -1,22 +1,22 @@
 use opentracingrust::FinishedSpan;
 
 
-/// TODO
+/// Collects finished spans to Zipkin over a Kafka topic.
 pub struct KafkaCollector {
-    // TODO
+    hosts: Vec<String>,
 }
 
 impl KafkaCollector {
-    /// TODO
-    pub fn new(host: &str) -> KafkaCollector {
+    /// Create a new connector seeded by the given hosts.
+    pub fn new(hosts: Vec<String>) -> KafkaCollector {
         KafkaCollector {
-            // TODO
+            hosts
         }
     }
 }
 
 impl KafkaCollector {
-    /// TODO
+    /// Sends a finished span to Zipkin.
     pub fn collect(&self, span: FinishedSpan) -> Result<(), ()> {
         // TODO
         Ok(())

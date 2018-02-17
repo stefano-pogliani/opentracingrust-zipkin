@@ -46,7 +46,7 @@ cd thrift/
 docker build --rm --tag thrift-compiler .
 docker run --rm -it -v $PWD:/thrift/models -v $PWD/../src:/thrift/src thrift-compiler bash
 thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/binary_format.thrift
-#thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/zipkinCore.thrift
+thrift -r --out /thrift/src/thrift_gen --gen rs /thrift/models/zipkinCore.thrift
 ```
 
 

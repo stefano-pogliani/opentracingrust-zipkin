@@ -1,4 +1,6 @@
-//! TODO
+//! Zipkin tracer implementation for [OpenTracingRust](https://crates.io/crates/opentracingrust/all)
+//!
+//! See the examples for usage.
 extern crate byteorder;
 extern crate crossbeam_channel;
 extern crate data_encoding;

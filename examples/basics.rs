@@ -16,7 +16,7 @@ fn main() {
     let (tracer, receiver) = ZipkinTracer::new();
     GlobalTracer::init(tracer);
 
-    let collector = KafkaCollector::new("localhost:9092");
+    let collector = KafkaCollector::new(vec![String::from("localhost:9092")]);
     let mut reporter = ReporterThread::new(receiver, move |span| {
         collector.collect(span).unwrap();
     });

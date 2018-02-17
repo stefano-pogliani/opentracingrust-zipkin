@@ -6,5 +6,6 @@ Features
 - Implement HTTP headers injection/extraction.
 - Implement thrift-based binary injection/extraction.
 - Initial library structure.
+- Kafka Collector implementation.
 - TraceID implementation.
 - Zipkin SpanContext implementation.
