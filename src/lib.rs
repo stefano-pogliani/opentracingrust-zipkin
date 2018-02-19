@@ -1,6 +1,7 @@
 //! Zipkin tracer implementation for [OpenTracingRust](https://crates.io/crates/opentracingrust/all)
 //!
 //! See the examples for usage.
+#![doc(html_root_url = "https://docs.rs/opentracingrust_zipkin/0.1.0")]
 extern crate byteorder;
 extern crate crossbeam_channel;
 extern crate data_encoding;
@@ -19,6 +20,4 @@ mod tracer;
 
 
 pub use self::tracer::ZipkinTracer;
-pub use self::tracer::ZipkinContextOptions;
-
 pub use self::collectors::kafka::KafkaCollector;

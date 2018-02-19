@@ -1,5 +1,7 @@
 use opentracingrust::FinishedSpan;
 
+use super::thrift_encode;
+
 
 /// Collects finished spans to Zipkin over a Kafka topic.
 pub struct KafkaCollector {
@@ -18,7 +20,7 @@ impl KafkaCollector {
 impl KafkaCollector {
     /// Sends a finished span to Zipkin.
     pub fn collect(&self, span: FinishedSpan) -> Result<(), ()> {
-        // TODO
+        let encoded = thrift_encode(&span);
         Ok(())
     }
 }
