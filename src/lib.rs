@@ -8,6 +8,8 @@ extern crate data_encoding;
 extern crate kafka;
 extern crate opentracingrust;
 extern crate rand;
+extern crate serde;
+extern crate serde_json;
 
 // Needed by thrift
 extern crate ordered_float;
@@ -20,5 +22,6 @@ mod thrift_gen;
 mod tracer;
 
 
+pub use self::thrift_gen::zipkin_core::Endpoint as ZipkinEndpoint;
 pub use self::tracer::ZipkinTracer;
 pub use self::collectors::kafka::KafkaCollector;

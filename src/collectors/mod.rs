@@ -1,7 +1,11 @@
+use std::collections::HashMap;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use opentracingrust::FinishedSpan;
+use opentracingrust::LogValue;
+use opentracingrust::TagValue;
+use serde_json;
 
 use super::thrift_gen::zipkin_core;
 use super::tracer::ZipkinContext;
@@ -22,8 +26,33 @@ fn compute_duration(start: SystemTime, end: SystemTime) -> i64 {
 }
 
 
+/// Encode a log value into a String.
+fn encode_log_value(value: &LogValue) -> String {
+    match *value {
+        LogValue::Boolean(true) => String::from("true"),
+        LogValue::Boolean(false) => String::from("false"),
+        LogValue::Float(value) => format!("{}", value),
+        LogValue::Integer(value) => format!("{}", value),
+        LogValue::String(ref value) => value.clone(),
+    }
+}
+
+
+/// Encode a tag value into a bytes buffer.
+fn encode_tag_value(value: &TagValue) -> (Vec<u8>, zipkin_core::AnnotationType) {
+    let buffer = match *value {
+        TagValue::Boolean(true) => String::from("true"),
+        TagValue::Boolean(false) => String::from("false"),
+        TagValue::Float(value) => format!("{}", value),
+        TagValue::Integer(value) => format!("{}", value),
+        TagValue::String(ref value) => value.clone(),
+    }.into_bytes();
+    (buffer, zipkin_core::AnnotationType::STRING)
+}
+
+
 /// Encodes a finished span into a thrift message for Zipkin.
-pub fn thrift_encode(span: &FinishedSpan) -> zipkin_core::Span {
+pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> zipkin_core::Span {
     // Extract span details.
     let context = span.context().impl_context::<ZipkinContext>().expect(
         "Invalid SpanContext, was it created by ZipkinTracer?"
@@ -37,15 +66,35 @@ pub fn thrift_encode(span: &FinishedSpan) -> zipkin_core::Span {
     };
 
     // Convert tags into binary annotations.
+    let mut binary_annotations = Vec::new();
     for (tag, value) in span.tags().iter() {
-        // TODO: if the tag is a known zipkin tag convert appropriately.
-        // TODO: convert into a binary annotation.
+        // TODO: if the tag is a known zipkin tag, convert appropriately.
+        let (buffer, value_type) = encode_tag_value(value);
+        let annotation = zipkin_core::BinaryAnnotation::new(
+            Some(tag.clone()),  // key
+            Some(buffer),  // value
+            Some(value_type),  // annotation_type
+            Some(endpoint.clone())  // host
+        );
+        binary_annotations.push(annotation);
     }
 
-    //// Convert logs into annotations.
-    //for log in span.logs() {
-    //    // TODO: convert into an annotation.
-    //}
+    // Convert logs into annotations.
+    let mut annotations = Vec::new();
+    for log in span.logs() {
+        let timestamp = compute_duration(UNIX_EPOCH, log.timestamp().unwrap().clone());
+        let fields: HashMap<String, String> = log.iter()
+            .map(|(key, value)|(key.clone(), encode_log_value(value)))
+            .collect();
+        // TODO: better error handling
+        let fields = serde_json::to_string(&fields).unwrap();
+        let annotation = zipkin_core::Annotation::new(
+            Some(timestamp),  // timestamp
+            Some(fields),  // value
+            Some(endpoint.clone())  // host
+        );
+        annotations.push(annotation);
+    }
 
     // Create a thrift span.
     zipkin_core::Span::new(
@@ -53,8 +102,8 @@ pub fn thrift_encode(span: &FinishedSpan) -> zipkin_core::Span {
         Some(span.name().clone()),  // name
         Some(context.span_id() as i64),  // id
         context.parent_span_id().map(|id| id as i64),  // parent_id
-        None,  // annotations
-        None,  // binary_annotations
+        Some(annotations),  // annotations
+        Some(binary_annotations),  // binary_annotations
         Some(context.debug()),  // debug
         Some(timestamp),  // timestamp
         Some(duration),  // duration
@@ -91,7 +140,10 @@ mod tests {
     fn mocks() -> (FinishedSpan, ZipkinContext, zipkin_core::Span) {
         let span = mock_span();
         let context = context(&span);
-        let encoded = thrift_encode(&span);
+        let endpoint = zipkin_core::Endpoint::new(
+            None, None, Some(String::from("test-service")), None
+        );
+        let encoded = thrift_encode(&span, &endpoint);
         (span, context, encoded)
     }
 
