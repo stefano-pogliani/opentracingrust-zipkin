@@ -24,12 +24,30 @@ fn compute_duration(start: SystemTime, end: SystemTime) -> i64 {
 
 /// Encodes a finished span into a thrift message for Zipkin.
 pub fn thrift_encode(span: &FinishedSpan) -> zipkin_core::Span {
+    // Extract span details.
     let context = span.context().impl_context::<ZipkinContext>().expect(
         "Invalid SpanContext, was it created by ZipkinTracer?"
     );
     let (high, low) = context.trace_id().split();
     let timestamp = compute_duration(UNIX_EPOCH, span.start_time().clone());
     let duration = compute_duration(span.start_time().clone(), span.finish_time().clone());
+    let duration = match duration {
+        0 => 1,
+        d => d,
+    };
+
+    // Convert tags into binary annotations.
+    for (tag, value) in span.tags().iter() {
+        // TODO: if the tag is a known zipkin tag convert appropriately.
+        // TODO: convert into a binary annotation.
+    }
+
+    //// Convert logs into annotations.
+    //for log in span.logs() {
+    //    // TODO: convert into an annotation.
+    //}
+
+    // Create a thrift span.
     zipkin_core::Span::new(
         Some(low as i64),  // trace_id
         Some(span.name().clone()),  // name

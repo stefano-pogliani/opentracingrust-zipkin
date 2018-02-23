@@ -16,13 +16,20 @@ fn main() {
     let (tracer, receiver) = ZipkinTracer::new();
     GlobalTracer::init(tracer);
 
-    let collector = KafkaCollector::new(vec![String::from("localhost:9092")]);
+    println!("Setting up kafka collector ...");
+    let mut collector = KafkaCollector::new(
+        String::from("zipkin"), vec![String::from("127.0.0.1:9092")]
+    );
     let mut reporter = ReporterThread::new(receiver, move |span| {
-        collector.collect(span).unwrap();
+        match collector.collect(span) {
+            Err(err) => println!("{:?}", err),
+            _ => (),
+        }
     });
     reporter.stop_delay(Duration::from_secs(2));
 
     // Now spawn some threads that create spans.
+    println!("Spawning threads ...");
     let mut threads: Vec<thread::JoinHandle<()>> = Vec::new();
     for i in 1..10 {
         let name = format!("Thread#{}", i);

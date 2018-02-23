@@ -5,6 +5,7 @@
 extern crate byteorder;
 extern crate crossbeam_channel;
 extern crate data_encoding;
+extern crate kafka;
 extern crate opentracingrust;
 extern crate rand;
 
