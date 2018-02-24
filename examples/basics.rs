@@ -25,7 +25,7 @@ fn main() {
     );
     let mut reporter = ReporterThread::new(receiver, move |span| {
         match collector.collect(span) {
-            Err(err) => println!("{:?}", err),
+            Err(err) => println!("Failed to report span: {:?}", err),
             _ => (),
         }
     });
