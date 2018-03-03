@@ -16,6 +16,7 @@ use opentracingrust::utils::GlobalTracer;
 use opentracingrust::utils::ReporterThread;
 
 use opentracingrust_zipkin::ZipkinTracer;
+use opentracingrust_zipkin::ZipkinEndpoint;
 use opentracingrust_zipkin::KafkaCollector;
 
 
@@ -23,9 +24,16 @@ fn main() {
     let (tracer, receiver) = ZipkinTracer::new();
     GlobalTracer::init(tracer);
 
-    let collector = KafkaCollector::new("localhost:9092");
-    let reporter = ReporterThread::new(move |span| {
-        collector.collect(span).unwrap();
+    let mut collector = KafkaCollector::new(
+        ZipkinEndpoint::new(None, None, Some(String::from("zipkin-example")), None),
+        String::from("zipkin"),  // Kafka topic
+        vec![String::from("127.0.0.1:9092")]  // Kafka seed
+    );
+    let reporter = ReporterThread::new(receiver, move |span| {
+        match collector.collect(span) {
+            Err(err) => println!("Failed to report span: {:?}", err),
+            _ => (),
+        }
     });
 }
 ```

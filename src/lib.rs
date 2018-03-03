@@ -49,7 +49,7 @@
 //!     // ... snip ...
 //! }
 //! ```
-#![doc(html_root_url = "https://docs.rs/opentracingrust_zipkin/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/opentracingrust_zipkin/0.1.1")]
 extern crate byteorder;
 extern crate crossbeam_channel;
 extern crate data_encoding;

@@ -1,4 +1,12 @@
-Version 0.1.0 (Unreleased)
+Version 0.1.1 (2018-03-03)
+==========================
+
+Minor fixes
+-----------
+- Fix readme example.
+- Fix repo link.
+
+Version 0.1.0 (2018-02-23)
 ==========================
 
 Features
