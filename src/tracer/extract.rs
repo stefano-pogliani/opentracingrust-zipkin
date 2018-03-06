@@ -77,9 +77,10 @@ pub fn binary(carrier: Box<&mut Read>) -> Result<Option<SpanContext>> {
 /// Baggage items are expected to be in the format `OT-Baggage-{Key}: {Value}`.
 pub fn http_headers(carrier: Box<&MapCarrier>) -> Result<Option<SpanContext>> {
     // Trace ID.
-    let trace_id = carrier.get("X-B3-TraceId").ok_or(
-        Error::Msg(String::from("Decoded context does not have a TraceID"))
-    )?;
+    let trace_id = match carrier.get("X-B3-TraceId") {
+        Some(trace_id) => trace_id,
+        None => return Ok(None)
+    };
     let trace_id: TraceID = trace_id.parse().map_err(data_encoding_error)?;
 
     // Span ID.
