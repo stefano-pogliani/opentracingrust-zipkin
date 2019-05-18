@@ -10,11 +10,10 @@ use serde_json;
 use super::thrift_gen::zipkin_core;
 use super::tracer::ZipkinContext;
 
+#[cfg(feature = "kafka_transport")]
 pub mod kafka;
 
-
 const MICROSECOND: i64 = 1000000;
-
 
 /// Computes the difference (in micro-seconds) between to system times.
 fn compute_duration(start: SystemTime, end: SystemTime) -> i64 {
@@ -24,7 +23,6 @@ fn compute_duration(start: SystemTime, end: SystemTime) -> i64 {
     };
     delta * MICROSECOND
 }
-
 
 /// Encode a log value into a String.
 fn encode_log_value(value: &LogValue) -> String {
@@ -37,7 +35,6 @@ fn encode_log_value(value: &LogValue) -> String {
     }
 }
 
-
 /// Encode a tag value into a bytes buffer.
 fn encode_tag_value(value: &TagValue) -> (Vec<u8>, zipkin_core::AnnotationType) {
     let buffer = match *value {
@@ -49,7 +46,6 @@ fn encode_tag_value(value: &TagValue) -> (Vec<u8>, zipkin_core::AnnotationType) 
     }.into_bytes();
     (buffer, zipkin_core::AnnotationType::STRING)
 }
-
 
 /// Encodes a finished span into a thrift message for Zipkin.
 pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> zipkin_core::Span {
@@ -111,19 +107,17 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
     )
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::time::UNIX_EPOCH;
+
     use opentracingrust::FinishedSpan;
 
     use super::super::ZipkinTracer;
     use super::super::tracer::ZipkinContext;
     use super::super::thrift_gen::zipkin_core;
-
     use super::MICROSECOND;
     use super::thrift_encode;
-
 
     fn context(span: &FinishedSpan) -> ZipkinContext {
         let context = span.context();

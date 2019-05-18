@@ -49,10 +49,11 @@
 //!     // ... snip ...
 //! }
 //! ```
-#![doc(html_root_url = "https://docs.rs/opentracingrust_zipkin/0.1.1")]
+#![doc(html_root_url = "https://docs.rs/opentracingrust_zipkin/0.1.3")]
 extern crate byteorder;
 extern crate crossbeam_channel;
 extern crate data_encoding;
+#[cfg(feature = "kafka_transport")]
 extern crate kafka;
 extern crate opentracingrust;
 extern crate rand;
@@ -64,12 +65,11 @@ extern crate ordered_float;
 extern crate thrift;
 extern crate try_from;
 
-
 mod collectors;
 mod thrift_gen;
 mod tracer;
 
-
 pub use self::thrift_gen::zipkin_core::Endpoint as ZipkinEndpoint;
 pub use self::tracer::ZipkinTracer;
+#[cfg(feature = "kafka_transport")]
 pub use self::collectors::kafka::KafkaCollector;
