@@ -10,6 +10,7 @@ use serde_json;
 use super::thrift_gen::zipkin_core;
 use super::tracer::ZipkinContext;
 
+pub mod http;
 #[cfg(feature = "kafka_transport")]
 pub mod kafka;
 

@@ -8,10 +8,10 @@ use opentracingrust::Log;
 use opentracingrust::utils::GlobalTracer;
 use opentracingrust::utils::ReporterThread;
 
-use opentracingrust_zipkin::KafkaCollector;
+use opentracingrust_zipkin::HttpCollector;
+use opentracingrust_zipkin::HttpCollectorOpts;
 use opentracingrust_zipkin::ZipkinEndpoint;
 use opentracingrust_zipkin::ZipkinTracer;
-
 
 fn main() {
     // Create a tracer and the reporter thread.
@@ -19,14 +19,26 @@ fn main() {
     GlobalTracer::init(tracer);
 
     println!("Setting up kafka collector ...");
-    let mut collector = KafkaCollector::new(
+    let options = HttpCollectorOpts::new(
+        // Jaeger provides an all-in-one, stateless, zipkin compatible docker image.
+        // While not zipkin, it is a very convenient tool for tests.
+        //   https://www.jaegertracing.io/docs/1.12/getting-started/
+        "http://localhost:9411",
         ZipkinEndpoint::new(None, None, Some(String::from("zipkin-example")), None),
-        String::from("zipkin"), vec![String::from("127.0.0.1:9092")]
-    );
+    )
+    .flush_count(4)
+    .flush_timeout(Duration::from_millis(500));
+    let mut collector = HttpCollector::new(options);
     let mut reporter = ReporterThread::new(receiver, move |span| {
-        match collector.collect(span) {
-            Err(err) => println!("Failed to report span: {:?}", err),
-            _ => (),
+        collector.collect(span);
+        match collector.lazy_flush() {
+            Err(err) => println!("[ERR] Failed to report span: {:?}", err),
+            Ok(None) => println!("[OK] Span flushing delayed"),
+            Ok(Some(mut response)) => {
+                let meta = format!("{:?}", response);
+                let body = format!("{:?}", response.text());
+                println!("[OK] Response: {} - {}", meta, body);
+            }
         }
     });
     reporter.stop_delay(Duration::from_secs(2));

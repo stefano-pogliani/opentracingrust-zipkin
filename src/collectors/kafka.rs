@@ -24,9 +24,7 @@ pub struct KafkaCollector {
 
 impl KafkaCollector {
     /// Create a new connector seeded by the given hosts.
-    pub fn new(
-        endpoint: ZipkinEndpoint, topic: String, hosts: Vec<String>
-    ) -> KafkaCollector {
+    pub fn new(endpoint: ZipkinEndpoint, topic: String, hosts: Vec<String>) -> KafkaCollector {
         let producer = Producer::from_hosts(hosts)
             .with_ack_timeout(Duration::from_secs(1))
             .with_required_acks(RequiredAcks::One)
@@ -38,9 +36,7 @@ impl KafkaCollector {
             topic,
         }
     }
-}
 
-impl KafkaCollector {
     /// Sends a finished span to Zipkin.
     // TODO: Change returned error type to wrap kafa and encoding errors.
     pub fn collect(&mut self, span: FinishedSpan) -> Result<()> {

@@ -5,8 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Thrift over HTTP collector (`/api/v1/spans` format).
+
 ### Changed
-- Kafka reported is a feature (enabled for backward compatibility).
+- Kafka collector is a feature (enabled for backward compatibility).
 
 ## [0.1.2] - 2018-03-04
 ### Fixed

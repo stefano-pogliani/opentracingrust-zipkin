@@ -57,6 +57,7 @@ extern crate data_encoding;
 extern crate kafka;
 extern crate opentracingrust;
 extern crate rand;
+extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
 
@@ -66,10 +67,16 @@ extern crate thrift;
 extern crate try_from;
 
 mod collectors;
+mod error;
 mod thrift_gen;
 mod tracer;
 
-pub use self::thrift_gen::zipkin_core::Endpoint as ZipkinEndpoint;
-pub use self::tracer::ZipkinTracer;
+pub use self::collectors::http::HttpCollector;
+pub use self::collectors::http::HttpCollectorOpts;
 #[cfg(feature = "kafka_transport")]
 pub use self::collectors::kafka::KafkaCollector;
+
+pub use self::error::Error;
+pub use self::error::Result;
+pub use self::thrift_gen::zipkin_core::Endpoint as ZipkinEndpoint;
+pub use self::tracer::ZipkinTracer;
