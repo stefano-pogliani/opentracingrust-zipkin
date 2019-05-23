@@ -93,6 +93,17 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
         annotations.push(annotation);
     }
 
+    // Ensure at least an annotation is present to carry the endpoint information.
+    if annotations.len() == 0 && binary_annotations.len() == 0 {
+        let annotation = zipkin_core::BinaryAnnotation::new(
+            Some("zipkin.endpoint.injected".into()),  // key
+            Some("true".into()),  // value
+            Some(zipkin_core::AnnotationType::STRING),  // annotation_type
+            Some(endpoint.clone())  // host
+        );
+        binary_annotations.push(annotation);
+    }
+
     // Create a thrift span.
     zipkin_core::Span::new(
         Some(low as i64),  // trace_id
