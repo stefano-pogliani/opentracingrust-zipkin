@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -14,15 +15,21 @@ pub mod http;
 #[cfg(feature = "kafka_transport")]
 pub mod kafka;
 
-const MICROSECOND: i64 = 1000000;
+const MICROSECOND: u64 = 1000000;
 
 /// Computes the difference (in micro-seconds) between to system times.
 fn compute_duration(start: SystemTime, end: SystemTime) -> i64 {
-    let delta: i64 = match end.duration_since(start) {
-        Ok(n) => n.as_secs() as i64,
-        _ => -(start.duration_since(end).unwrap().as_secs() as i64)
+    let delta = match end.duration_since(start) {
+        Ok(n) => n,
+        _ => start.duration_since(end).unwrap(),
     };
-    delta * MICROSECOND
+    let secs = delta.as_secs() * MICROSECOND;
+    let micros = u64::from(delta.subsec_micros());
+    let delta = secs + micros;
+    match i64::try_from(delta) {
+        Err(_) => i64::max_value(),
+        Ok(delta) => delta,
+    }
 }
 
 /// Encode a log value into a String.
@@ -121,6 +128,7 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryFrom;
     use std::time::UNIX_EPOCH;
 
     use opentracingrust::FinishedSpan;
@@ -173,8 +181,8 @@ mod tests {
     fn serialise_times() {
         let (span, _, encoded) = mocks();
         let timestamp = span.start_time().duration_since(UNIX_EPOCH).unwrap();
-        let timestamp = timestamp.as_secs() * 1000000;
-        assert!(encoded.duration.unwrap() < 1 * MICROSECOND, "Unlikely long duration");
-        assert_eq!(encoded.timestamp.unwrap(), timestamp as i64);
+        let timestamp = timestamp.as_secs() * MICROSECOND + u64::from(timestamp.subsec_micros());
+        let timestamp = i64::try_from(timestamp).unwrap();
+        assert_eq!(encoded.timestamp.unwrap(), timestamp);
     }
 }
