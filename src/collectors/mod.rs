@@ -15,7 +15,7 @@ pub mod http;
 #[cfg(feature = "kafka_transport")]
 pub mod kafka;
 
-const MICROSECOND: u64 = 1000000;
+const MICROSECOND: u64 = 1_000_000;
 
 /// Computes the difference (in micro-seconds) between to system times.
 fn compute_duration(start: SystemTime, end: SystemTime) -> i64 {
@@ -62,8 +62,8 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
         "Invalid SpanContext, was it created by ZipkinTracer?"
     );
     let (high, low) = context.trace_id().split();
-    let timestamp = compute_duration(UNIX_EPOCH, span.start_time().clone());
-    let duration = compute_duration(span.start_time().clone(), span.finish_time().clone());
+    let timestamp = compute_duration(UNIX_EPOCH, *span.start_time());
+    let duration = compute_duration(*span.start_time(), *span.finish_time());
     let duration = match duration {
         0 => 1,
         d => d,
@@ -75,10 +75,10 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
         // TODO: if the tag is a known zipkin tag, convert appropriately.
         let (buffer, value_type) = encode_tag_value(value);
         let annotation = zipkin_core::BinaryAnnotation::new(
-            Some(tag.clone()),  // key
-            Some(buffer),  // value
-            Some(value_type),  // annotation_type
-            Some(endpoint.clone())  // host
+            Some(tag.clone()),      // key
+            Some(buffer),           // value
+            Some(value_type),       // annotation_type
+            Some(endpoint.clone()), // host
         );
         binary_annotations.push(annotation);
     }
@@ -86,43 +86,43 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
     // Convert logs into annotations.
     let mut annotations = Vec::new();
     for log in span.logs() {
-        let timestamp = compute_duration(UNIX_EPOCH, log.timestamp().unwrap().clone());
+        let timestamp = compute_duration(UNIX_EPOCH, *log.timestamp().unwrap());
         let fields: HashMap<String, String> = log.iter()
             .map(|(key, value)|(key.clone(), encode_log_value(value)))
             .collect();
         // TODO: better error handling
         let fields = serde_json::to_string(&fields).unwrap();
         let annotation = zipkin_core::Annotation::new(
-            Some(timestamp),  // timestamp
-            Some(fields),  // value
-            Some(endpoint.clone())  // host
+            Some(timestamp),        // timestamp
+            Some(fields),           // value
+            Some(endpoint.clone()), // host
         );
         annotations.push(annotation);
     }
 
     // Ensure at least an annotation is present to carry the endpoint information.
-    if annotations.len() == 0 && binary_annotations.len() == 0 {
+    if annotations.is_empty() && binary_annotations.is_empty() {
         let annotation = zipkin_core::BinaryAnnotation::new(
-            Some("zipkin.endpoint.injected".into()),  // key
-            Some("true".into()),  // value
-            Some(zipkin_core::AnnotationType::STRING),  // annotation_type
-            Some(endpoint.clone())  // host
+            Some("zipkin.endpoint.injected".into()),   // key
+            Some("true".into()),                       // value
+            Some(zipkin_core::AnnotationType::STRING), // annotation_type
+            Some(endpoint.clone()),                    // host
         );
         binary_annotations.push(annotation);
     }
 
     // Create a thrift span.
     zipkin_core::Span::new(
-        Some(low as i64),  // trace_id
-        Some(span.name().clone()),  // name
-        Some(context.span_id() as i64),  // id
+        Some(low as i64),                              // trace_id
+        Some(span.name().clone()),                     // name
+        Some(context.span_id() as i64),                // id
         context.parent_span_id().map(|id| id as i64),  // parent_id
-        Some(annotations),  // annotations
-        Some(binary_annotations),  // binary_annotations
-        Some(context.debug()),  // debug
-        Some(timestamp),  // timestamp
-        Some(duration),  // duration
-        Some(high as i64)  // trace_id_high
+        Some(annotations),                             // annotations
+        Some(binary_annotations),                      // binary_annotations
+        Some(context.debug()),                         // debug
+        Some(timestamp),                               // timestamp
+        Some(duration),                                // duration
+        Some(high as i64),                             // trace_id_high
     )
 }
 

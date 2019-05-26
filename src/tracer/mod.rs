@@ -1,20 +1,16 @@
 use crossbeam_channel::unbounded;
 
-use opentracingrust::ImplContextBox;
-
 use opentracingrust::ExtractFormat;
+use opentracingrust::ImplContextBox;
 use opentracingrust::InjectFormat;
-
 use opentracingrust::Result;
 use opentracingrust::Span;
 use opentracingrust::SpanContext;
 use opentracingrust::SpanReceiver;
 use opentracingrust::SpanSender;
 use opentracingrust::StartOptions;
-
 use opentracingrust::Tracer;
 use opentracingrust::TracerInterface;
-
 
 mod context;
 mod error;
@@ -24,7 +20,6 @@ mod trace_id;
 
 pub use self::context::ZipkinContext;
 pub use self::context::ZipkinContextOptions;
-
 
 /// A Zipkin backed OpenTracingRust tracer.
 ///
@@ -42,15 +37,12 @@ impl ZipkinTracer {
     /// Creates a new zipkin tracer.
     pub fn new() -> (Tracer, SpanReceiver) {
         let (sender, receiver) = unbounded();
-        let tracer = Tracer::new(ZipkinTracer {
-            sender,
-        });
+        let tracer = Tracer::new(ZipkinTracer { sender });
         (tracer, receiver)
     }
 }
 
 impl TracerInterface for ZipkinTracer {
-    /// TODO: document formats.
     fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
         match fmt {
             ExtractFormat::Binary(carrier) => extract::binary(carrier),
@@ -59,7 +51,6 @@ impl TracerInterface for ZipkinTracer {
         }
     }
 
-    /// TODO: document formats.
     fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()> {
         match fmt {
             InjectFormat::Binary(carrier) => inject::binary(context, carrier),

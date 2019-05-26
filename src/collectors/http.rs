@@ -52,7 +52,7 @@ impl HttpCollector {
     /// Flush all buffered spans to zipkin.
     pub fn flush(&mut self) -> Result<Option<Response>> {
         self.flush_last = Instant::now();
-        if self.spans.len() == 0 {
+        if self.spans.is_empty() {
             return Ok(None);
         }
 

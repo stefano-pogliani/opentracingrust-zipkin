@@ -1,17 +1,15 @@
-use std::io::Cursor;
 use std::fmt;
+use std::io::Cursor;
 use std::str::FromStr;
 
 use byteorder::NetworkEndian;
 use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
-
-use data_encoding::HEXLOWER_PERMISSIVE;
 use data_encoding::DecodeError;
 use data_encoding::DecodeKind;
+use data_encoding::HEXLOWER_PERMISSIVE;
 
 use rand::random;
-
 
 /// Converts an 8-bytes buffer into an u64.
 ///
@@ -29,7 +27,6 @@ fn buffer_to_u64(input: &[u8]) -> u64 {
     buffer.read_u64::<NetworkEndian>().unwrap()
 }
 
-
 /// Converts an u64 into an 8-bytes buffer.
 ///
 /// ```ignore
@@ -42,14 +39,12 @@ fn u64_to_buffer(input: u64) -> Vec<u8> {
     buffer
 }
 
-
 /// Inner container for long or short trace ids.
 #[derive(Clone, Debug, PartialEq)]
 enum InnerID {
     Long([u8; 16]),
     Short([u8; 8]),
 }
-
 
 /// Zipkin trace identifier.
 ///
@@ -66,8 +61,8 @@ impl TraceID {
         let high = u64_to_buffer(high);
         let low = u64_to_buffer(low);
         let trace_id = [
-            high[0], high[1], high[2], high[3], high[4], high[5], high[6], high[7],
-            low[0], low[1], low[2], low[3], low[4], low[5], low[6], low[7]
+            high[0], high[1], high[2], high[3], high[4], high[5], high[6], high[7], low[0], low[1],
+            low[2], low[3], low[4], low[5], low[6], low[7],
         ];
         TraceID::from(trace_id)
     }
@@ -86,7 +81,7 @@ impl TraceID {
                 let high = buffer_to_u64(&id[0..8]);
                 let low = buffer_to_u64(&id[8..16]);
                 (high, low)
-            },
+            }
             InnerID::Short(ref id) => {
                 let low = buffer_to_u64(&id[0..8]);
                 (0, low)
@@ -99,7 +94,7 @@ impl fmt::Display for TraceID {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let id: &[u8] = match self.0 {
             InnerID::Long(ref id) => id,
-            InnerID::Short(ref id) => id
+            InnerID::Short(ref id) => id,
         };
         for byte in id {
             write!(fmt, "{:02x}", byte)?;
@@ -119,18 +114,18 @@ impl FromStr for TraceID {
                     .decode_mut(s.as_bytes(), &mut buffer)
                     .map_err(|err| err.error)?;
                 Ok(TraceID::from(buffer))
-            },
+            }
             Ok(16) => {
                 let mut buffer = [0; 16];
                 HEXLOWER_PERMISSIVE
                     .decode_mut(s.as_bytes(), &mut buffer)
                     .map_err(|err| err.error)?;
                 Ok(TraceID::from(buffer))
-            },
+            }
             _ => Err(DecodeError {
                 position: 0,
-                kind: DecodeKind::Length
-            })
+                kind: DecodeKind::Length,
+            }),
         }
     }
 }
@@ -147,7 +142,6 @@ impl From<[u8; 16]> for TraceID {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::InnerID;
@@ -158,7 +152,7 @@ mod tests {
         let id = TraceID::new();
         match id.0 {
             InnerID::Short(_) => panic!("Generated IDs should be long"),
-            _ => ()
+            _ => (),
         }
     }
 
@@ -191,7 +185,9 @@ mod tests {
 
     mod from_string {
         use std::str::FromStr;
+
         use data_encoding::DecodeKind;
+
         use super::super::TraceID;
 
         #[test]
@@ -212,7 +208,7 @@ mod tests {
         fn too_short() {
             match TraceID::from_str("deadbeef") {
                 Err(err) => assert_eq!(err.kind, DecodeKind::Length),
-                _ => panic!("String decoding should have failed")
+                _ => panic!("String decoding should have failed"),
             }
         }
 
@@ -220,7 +216,7 @@ mod tests {
         fn too_long() {
             match TraceID::from_str("deadbeef0102030405060708090a0b0c0d0e0f10") {
                 Err(err) => assert_eq!(err.kind, DecodeKind::Length),
-                _ => panic!("String decoding should have failed")
+                _ => panic!("String decoding should have failed"),
             }
         }
     }
@@ -277,13 +273,19 @@ mod tests {
         #[test]
         fn high_and_low() {
             let id = TraceID::join(5, 2);
-            assert_eq!(id, TraceID::from([0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 2]));
+            assert_eq!(
+                id,
+                TraceID::from([0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 2]),
+            );
         }
 
         #[test]
         fn high_is_zero_when_low_is_enough() {
             let id = TraceID::join(0, 2);
-            assert_eq!(id, TraceID::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]));
+            assert_eq!(
+                id,
+                TraceID::from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]),
+            );
         }
     }
 }
