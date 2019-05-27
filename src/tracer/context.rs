@@ -73,11 +73,17 @@ impl ZipkinContext {
 impl SpanReferenceAware for ZipkinContext {
     fn reference_span(&mut self, reference: &SpanReference) {
         match *reference {
-            SpanReference::FollowsFrom(ref context) |
             SpanReference::ChildOf(ref context) => {
                 let context = context.impl_context::<ZipkinContext>().unwrap();
                 self.debug = context.debug;
                 self.parent_span_id = Some(context.span_id);
+                self.sampled = context.sampled;
+                self.trace_id = context.trace_id.clone();
+            }
+            SpanReference::FollowsFrom(ref context) => {
+                let context = context.impl_context::<ZipkinContext>().unwrap();
+                self.debug = context.debug;
+                self.parent_span_id = None;
                 self.sampled = context.sampled;
                 self.trace_id = context.trace_id.clone();
             }
