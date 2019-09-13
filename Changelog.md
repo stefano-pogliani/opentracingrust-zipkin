@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.2.0] - 2019-09-13
+### Changed
+- **BREAKING**: Disable kafka transport by default.
+- Update kafka client for openssl 1.0 support.
+
 ## [0.1.6] - 2019-05-27
 ### Fixed
 - FollowsFrom spans actually follow the parent and are not partially children.
@@ -49,7 +54,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Zipkin SpanContext implementation.
 
 
-[Unreleased]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.6...v0.2.0
+[0.1.6]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.2...v0.1.3
