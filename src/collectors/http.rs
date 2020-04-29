@@ -67,7 +67,8 @@ impl HttpCollector {
             .headers(self.headers.clone())
             .header(CONTENT_TYPE, "application/x-thrift")
             .body(payload)
-            .send()?;
+            .send();
+        let response = futures::executor::block_on(response)?;
         Ok(Some(response))
     }
 

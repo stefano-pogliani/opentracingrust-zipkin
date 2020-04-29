@@ -52,7 +52,7 @@ fn encode_tag_value(value: &TagValue) -> (Vec<u8>, zipkin_core::AnnotationType) 
         TagValue::Integer(value) => format!("{}", value),
         TagValue::String(ref value) => value.clone(),
     }.into_bytes();
-    (buffer, zipkin_core::AnnotationType::STRING)
+    (buffer, zipkin_core::AnnotationType::String)
 }
 
 /// Encodes a finished span into a thrift message for Zipkin.
@@ -105,7 +105,7 @@ pub fn thrift_encode(span: &FinishedSpan, endpoint: &zipkin_core::Endpoint) -> z
         let annotation = zipkin_core::BinaryAnnotation::new(
             Some("zipkin.endpoint.injected".into()),   // key
             Some("true".into()),                       // value
-            Some(zipkin_core::AnnotationType::STRING), // annotation_type
+            Some(zipkin_core::AnnotationType::String), // annotation_type
             Some(endpoint.clone()),                    // host
         );
         binary_annotations.push(annotation);

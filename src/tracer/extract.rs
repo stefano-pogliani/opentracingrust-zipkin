@@ -20,7 +20,7 @@ use super::super::thrift_gen::binary_format;
 
 
 /// Decode the SpanContext from a thrift structure.
-pub fn binary(carrier: Box<&mut Read>) -> Result<Option<SpanContext>> {
+pub fn binary(carrier: Box<&mut dyn Read>) -> Result<Option<SpanContext>> {
     let transport = TBufferedReadTransport::new(carrier);
     let mut protocol = TBinaryInputProtocol::new(transport, true);
     let result = binary_format::SpanContext::read_from_in_protocol(&mut protocol);
@@ -75,7 +75,7 @@ pub fn binary(carrier: Box<&mut Read>) -> Result<Option<SpanContext>> {
 /// See https://github.com/openzipkin/b3-propagation
 ///
 /// Baggage items are expected to be in the format `OT-Baggage-{Key}: {Value}`.
-pub fn http_headers(carrier: Box<&MapCarrier>) -> Result<Option<SpanContext>> {
+pub fn http_headers(carrier: Box<&dyn MapCarrier>) -> Result<Option<SpanContext>> {
     // Trace ID.
     let trace_id = match carrier.get("X-B3-TraceId") {
         Some(trace_id) => trace_id,

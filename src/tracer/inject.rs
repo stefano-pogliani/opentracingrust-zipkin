@@ -15,7 +15,7 @@ use super::super::thrift_gen::binary_format;
 
 
 /// Encode the SpanContext into a thrift structure.
-pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
+pub fn binary(context: &SpanContext, carrier: Box<&mut dyn Write>) -> Result<()> {
     let inner_context = context.impl_context::<ZipkinContext>().expect(
         "Invalid SpanContext, was it created by ZipkinTracer?"
     );
@@ -51,7 +51,7 @@ pub fn binary(context: &SpanContext, carrier: Box<&mut Write>) -> Result<()> {
 /// See https://github.com/openzipkin/b3-propagation
 ///
 /// Baggage items are added to the headers with `OT-Baggage-{Key}: {Value}`.
-pub fn http_headers(context: &SpanContext, carrier: Box<&mut MapCarrier>) -> Result<()> {
+pub fn http_headers(context: &SpanContext, carrier: Box<&mut dyn MapCarrier>) -> Result<()> {
     let inner_context = context.impl_context::<ZipkinContext>().expect(
         "Invalid SpanContext, was it created by ZipkinTracer?"
     );
@@ -84,6 +84,7 @@ pub fn http_headers(context: &SpanContext, carrier: Box<&mut MapCarrier>) -> Res
 mod tests {
     use std::collections::HashMap;
     use std::io::Cursor;
+    use std::str::FromStr;
 
     use opentracingrust::ImplContextBox;
     use opentracingrust::SpanContext;
@@ -91,8 +92,6 @@ mod tests {
 
     use thrift::protocol::TBinaryInputProtocol;
     use thrift::transport::TBufferedReadTransport;
-
-    use try_from::TryFrom;
 
     use super::super::context::ZipkinContext;
     use super::super::context::ZipkinContextOptions;
@@ -107,7 +106,7 @@ mod tests {
             .debug(true)
             .sampled(true)
             .span_id(42)
-            .trace_id(TraceID::try_from("0102030405060708090a0b0c0d0e0f10").unwrap());
+            .trace_id(TraceID::from_str("0102030405060708090a0b0c0d0e0f10").unwrap());
         let context = ZipkinContext::new_with_options(options);
         let context = ImplContextBox::new(context);
         let mut context = SpanContext::new(context);

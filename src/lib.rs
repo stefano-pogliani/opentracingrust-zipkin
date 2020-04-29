@@ -62,9 +62,9 @@ extern crate serde;
 extern crate serde_json;
 
 // Needed by thrift
-extern crate ordered_float;
+//extern crate ordered_float;
 extern crate thrift;
-extern crate try_from;
+//extern crate try_from;
 
 mod collectors;
 mod error;

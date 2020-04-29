@@ -34,9 +34,9 @@ fn main() {
         match collector.lazy_flush() {
             Err(err) => println!("[ERR] Failed to report span: {:?}", err),
             Ok(None) => println!("[OK] Span flushing delayed"),
-            Ok(Some(mut response)) => {
+            Ok(Some(response)) => {
                 let meta = format!("{:?}", response);
-                let body = format!("{:?}", response.text());
+                let body = format!("{:?}", futures::executor::block_on(response.text()));
                 println!("[OK] Response: {} - {}", meta, body);
             }
         }
