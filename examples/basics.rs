@@ -36,7 +36,7 @@ fn main() {
             Ok(None) => println!("[OK] Span flushing delayed"),
             Ok(Some(response)) => {
                 let meta = format!("{:?}", response);
-                let body = format!("{:?}", futures::executor::block_on(response.text()));
+                let body = format!("{:?}", response.text());
                 println!("[OK] Response: {} - {}", meta, body);
             }
         }

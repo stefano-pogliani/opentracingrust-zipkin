@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.1] - 2020-05-05
+- Fix use of async `reqwest` in sync code.
+
 ## [0.3.0] - 2020-04-29
 ### Changed
 - Update dependencies to latest available versions.
@@ -58,7 +61,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Zipkin SpanContext implementation.
 
 
-[Unreleased]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.6...v0.2.0
 [0.1.6]: https://github.com/stefano-pogliani/opentracingrust-zipkin/compare/v0.1.5...v0.1.6

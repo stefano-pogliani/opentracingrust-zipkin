@@ -1,10 +1,10 @@
 use std::time::Duration;
 use std::time::Instant;
 
+use reqwest::blocking::Client;
+use reqwest::blocking::Response;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::header::HeaderMap;
-use reqwest::Client;
-use reqwest::Response;
 use thrift::protocol::TBinaryOutputProtocol;
 use thrift::protocol::TListIdentifier;
 use thrift::protocol::TOutputProtocol;
@@ -67,8 +67,7 @@ impl HttpCollector {
             .headers(self.headers.clone())
             .header(CONTENT_TYPE, "application/x-thrift")
             .body(payload)
-            .send();
-        let response = futures::executor::block_on(response)?;
+            .send()?;
         Ok(Some(response))
     }
 

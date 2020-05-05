@@ -1,6 +1,6 @@
 [package]
 name = "opentracingrust_zipkin"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 
 description = "Zipkin tracer for OpenTracingRust"
@@ -18,11 +18,10 @@ kafka_transport = ["kafka"]
 byteorder = "^1.2.1"
 crossbeam-channel = "^0.4.2"
 data-encoding = "^2.1.1"
-futures = "^0.3.4"
 kafka = { version = "^0.8.0", optional = true }
 opentracingrust = "^0.4.0"
 rand = "^0.7.3"
-reqwest = "^0.10.4"
+reqwest = { version = "^0.10.4", features = ["blocking"] }
 serde = "^1.0.27"
 serde_json = "^1.0.9"
 thrift = "^0.13.0"
